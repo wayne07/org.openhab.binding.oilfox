@@ -11,6 +11,8 @@ Export-Package:
  org.openhab.binding.oilfox,
  org.openhab.binding.oilfox.handler
 Import-Package: 
+ com.google.common.base,
+ com.google.gson,
  org.openhab.binding.oilfox,
  org.openhab.binding.oilfox.handler,
  org.eclipse.jdt.annotation;resolution:=optional,

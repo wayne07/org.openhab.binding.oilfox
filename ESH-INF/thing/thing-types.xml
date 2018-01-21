@@ -3,29 +3,65 @@
 	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 
-	<!-- Sample Thing Type -->
-	<thing-type id="sample">
-		<label>oilfox Binding Thing</label>
-		<description>Sample thing for oilfox Binding</description>
+	<thing-type id="oilfox">
+		<label>OilFox</label>
+		<description>OilFox connected through WLAN</description>
 
 		<channels>
-			<channel id="channel1" typeId="sample-channel" />
+            <channel id="volume" typeId="volume" />
+            <channel id="height" typeId="height" />
+            <channel id="offset" typeId="height" />
+            <channel id="metering" typeId="height" />
+            <!-- TBD: how much height inside -->
+            <!-- TBD: other properties -->
 		</channels>
 
-		<config-description>
-			<parameter name="config1" type="text" required="true">
-				<label>Sample parameter</label>
-				<description>This is a sample text configuration parameter.</description>
-			</parameter>
-		</config-description>
+        <properties>
+            <property name="vendor">OilFox</property>
+            <property name="modelId">OilFox</property>
+            <property name="version"></property>
+            <property name="hardwareId"></property>
+        </properties>
 
+        <config-description>
+            <parameter name="address" type="text">
+                <label>Hostname</label>
+                <description>OilFox Cloud server</description>
+                <required>true</required>
+                <default>api.oilfox.io</default>
+            </parameter>
+
+            <parameter name="email" type="text">
+                <label>Email on OilFox Cloud</label>
+                <description>Provide the Email registerd on the OilFox Cloud</description>
+                <required>true</required>
+            </parameter>
+
+            <parameter name="password" type="text">
+                <context>password</context>
+                <label>Password on OilFox Cloud</label>
+                <description>Provide the password registerd on the OilFox Cloud</description>
+                <required>true</required>
+            </parameter>
+            
+            <parameter name="refresh" type="integer" required="true" min="1" max="65335">
+                <label>Refresh interval</label>
+                <description>Specifies the refresh interval in hours.</description>
+                <required>true</required>
+                <default>6</default>
+            </parameter>
+        </config-description>
 	</thing-type>
 
-	<!-- Sample Channel Type -->
-	<channel-type id="sample-channel">
-		<item-type>oilfoxItem</item-type>
-		<label>oilfox Binding Channel</label>
-		<description>Sample channel for oilfox Binding</description>
-	</channel-type>
+    <channel-type id="height">
+        <item-type>Number</item-type>
+        <label>Height [%d cm]</label>
+        <description>Height in centimeters</description>
+    </channel-type>
 
+    <channel-type id="volume">
+        <item-type>Number</item-type>
+        <label>Height [%d l]</label>
+        <description>Volume in liters</description>
+    </channel-type>
 </thing:thing-descriptions>

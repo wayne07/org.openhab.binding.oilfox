@@ -13,11 +13,11 @@
 package org.openhab.binding.oilfox.internal;
 
 /**
- * The {@link oilfoxConfiguration} class contains fields mapping thing configuration paramters.
+ * The {@link OilFoxConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Roland Moser - Initial contribution
  */
-public class oilfoxConfiguration {
+public class OilFoxConfiguration {
 
     /**
      * Sample configuration parameter. Replace with you own.

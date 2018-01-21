@@ -12,32 +12,32 @@
  */
 package org.openhab.binding.oilfox.internal;
 
-import static org.openhab.binding.oilfox.oilfoxBindingConstants.*;
+import static org.openhab.binding.oilfox.OilFoxBindingConstants.THING_TYPE_OILFOX;
 
 import java.util.Collections;
 import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.oilfox.handler.oilfoxHandler;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
+import org.openhab.binding.oilfox.handler.OilFoxHandler;
 import org.osgi.service.component.annotations.Component;
 
 /**
- * The {@link oilfoxHandlerFactory} is responsible for creating things and thing
+ * The {@link OilFoxHandlerFactory} is responsible for creating things and thing
  * handlers.
  *
  * @author Roland Moser - Initial contribution
  */
 @Component(service = ThingHandlerFactory.class, immediate = true, configurationPid = "binding.oilfox")
 @NonNullByDefault
-public class oilfoxHandlerFactory extends BaseThingHandlerFactory {
+public class OilFoxHandlerFactory extends BaseThingHandlerFactory {
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_SAMPLE);
+    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_OILFOX);
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
@@ -48,8 +48,8 @@ public class oilfoxHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (thingTypeUID.equals(THING_TYPE_SAMPLE)) {
-            return new oilfoxHandler(thing);
+        if (thingTypeUID.equals(THING_TYPE_OILFOX)) {
+            return new OilFoxHandler(thing);
         }
 
         return null;
