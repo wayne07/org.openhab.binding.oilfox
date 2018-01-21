@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.oilfox.internal;
 
+import java.math.BigDecimal;
+
 /**
  * The {@link OilFoxConfiguration} class contains fields mapping thing configuration parameters.
  *
@@ -19,8 +21,8 @@ package org.openhab.binding.oilfox.internal;
  */
 public class OilFoxConfiguration {
 
-    /**
-     * Sample configuration parameter. Replace with you own.
-     */
-    public String config1;
+    public String address;
+    public String email;
+    public String password;
+    public BigDecimal refresh;
 }
