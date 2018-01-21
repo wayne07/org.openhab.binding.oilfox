@@ -15,11 +15,11 @@ package org.openhab.binding.oilfox.internal;
 import java.math.BigDecimal;
 
 /**
- * The {@link OilFoxConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link OilFoxBridgeConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Roland Moser - Initial contribution
  */
-public class OilFoxConfiguration {
+public class OilFoxBridgeConfiguration {
 
     public String address;
     public String email;

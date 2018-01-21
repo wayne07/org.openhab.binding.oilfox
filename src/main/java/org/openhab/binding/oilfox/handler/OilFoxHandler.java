@@ -1,196 +1,139 @@
-/**
- * Copyright (c) 2018,2018 by the respective copyright holders.
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0
- *
- * SPDX-License-Identifier: EPL-2.0
- */
 package org.openhab.binding.oilfox.handler;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
-import org.openhab.binding.oilfox.internal.OilFoxConfiguration;
+import org.openhab.binding.oilfox.OilFoxBindingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
-/**
- * The {@link OilFoxHandler} is responsible for handling commands, which are
- * sent to one of the channels.
- *
- * @author Roland Moser - Initial contribution
- */
-@NonNullByDefault
-public class OilFoxHandler extends BaseThingHandler {
+public class OilFoxHandler extends BaseThingHandler implements OilFoxStatusListener {
 
     private final Logger logger = LoggerFactory.getLogger(OilFoxHandler.class);
-
-    @Nullable
-    private OilFoxConfiguration config;
-
-    private ScheduledFuture<?> refreshJob;
 
     public OilFoxHandler(Thing thing) {
         super(thing);
     }
 
-    private void ReadStatus() {
-        synchronized (this) {
-            if (getThing().getStatus() == ThingStatus.OFFLINE) {
-                login();
-            }
-
-            if (getThing().getStatus() != ThingStatus.ONLINE) {
-                return;
-            }
-
-            try {
-                summary();
-                updateStatus(ThingStatus.ONLINE);
-            } catch (MalformedURLException e) {
-                logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
-            } catch (IOException e) {
-                logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
-            }
-        }
-    }
-
-    @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
-        // TODO: currently not implemented to change any configuration
-    }
-
     @Override
     public void initialize() {
-        config = getConfigAs(OilFoxConfiguration.class);
-        synchronized (this) {
-            // cancel old job
-            if (refreshJob != null) {
-                refreshJob.cancel(false);
-            }
+        initializeThing((getBridge() == null) ? null : getBridge().getStatus());
+    }
 
-            login();
-
-            refreshJob = scheduler.scheduleWithFixedDelay(() -> {
-                ReadStatus();
-            }, 0, config.refresh.longValue(), TimeUnit.HOURS);
+    private void initializeThing(ThingStatus bridgeStatus) {
+        String oilfoxid = this.getThing().getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
+        if (oilfoxid == null) {
+            logger.error("OilFoxId is not set in {}", this.getThing().getUID());
+            return;
         }
-    }
 
-    // communication with OilFox Cloud
+        logger.debug("initializeThing thing {} bridge status {}", getThing().getUID(), bridgeStatus);
 
-    // TBD: store token
-    private String token;
-
-    protected JsonElement Query(String address) throws MalformedURLException, IOException {
-        return Query(address, JsonNull.INSTANCE);
-    }
-
-    @SuppressWarnings("null")
-    protected JsonElement Query(String address, JsonElement requestObject) throws MalformedURLException, IOException {
-        URL url = new URL(address);
-        logger.info("Query({})", url.toString());
-        HttpsURLConnection request = (HttpsURLConnection) url.openConnection();
-        request.setReadTimeout(10000);
-        request.setConnectTimeout(15000);
-        request.setRequestProperty("Content-Type", "application/json");
-        request.setDoInput(true);
-        if (requestObject == JsonNull.INSTANCE) {
-            if (getThing().getStatus() != ThingStatus.ONLINE) {
-                throw new IOException("Not logged in");
+        if (getBridge() != null) {
+            if (bridgeStatus == ThingStatus.ONLINE) {
+                ((OilFoxBridgeHandler) this.getBridge().getHandler()).registerOilFoxStatusListener(this);
+                updateStatus(ThingStatus.ONLINE);
+            } else {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
             }
-
-            request.setRequestProperty("X-Auth-Token", token);
         } else {
-            request.setRequestMethod("POST");
-            request.setDoOutput(true);
-
-            OutputStream os = request.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-            writer.write(requestObject.toString());
-            writer.flush();
-            writer.close();
-            os.close();
-        }
-
-        request.connect();
-
-        switch (request.getResponseCode()) {
-            case 401:
-                throw new IOException("Unauthorized");
-            case 200:
-                // authorized
-            default:
-                Reader reader = new InputStreamReader(request.getInputStream(), "UTF-8");
-                JsonParser parser = new JsonParser();
-                JsonElement element = parser.parse(reader);
-                reader.close();
-                return element;
+            updateStatus(ThingStatus.OFFLINE);
         }
     }
 
-    private void login() {
+    @Override
+    public void handleCommand(@NonNull ChannelUID channelUID, Command command) {
+    }
+
+    @Override
+    public void onOilFoxRemoved(ThingUID bridge, String oilfox) {
+    }
+
+    @Override
+    public void onOilFoxAdded(ThingUID bridge, String name, String id, String hwid) {
+    }
+
+    @Override
+    public void onOilFoxRefresh(OilFoxBridgeHandler bridge) {
         try {
-            JsonObject requestObject = new JsonObject();
-            requestObject.addProperty("email", config.email);
-            requestObject.addProperty("password", config.password);
-
-            JsonElement responseObject = Query("https://" + config.address + "/v1/user/login", requestObject);
-
-            if (responseObject.isJsonObject()) {
-                JsonObject object = responseObject.getAsJsonObject();
-                token = object.get("token").getAsString();
-                logger.info("Token " + token);
-            }
-
+            battery(bridge);
+            latestMeter(bridge);
             updateStatus(ThingStatus.ONLINE);
+        } catch (MalformedURLException e) {
+            logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
         } catch (IOException e) {
             logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         }
+
     }
 
-    public void summary() throws MalformedURLException, IOException {
-        JsonElement responseObject = Query("https://" + config.address + "/v1/user/summary");
+    public void battery(OilFoxBridgeHandler bridge) throws MalformedURLException, IOException {
+        String oilfoxid = this.getThing().getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
+        if (oilfoxid == null) {
+            logger.error("OilFoxId is not set in {}", this.getThing().getUID());
+            return;
+        }
+
+        JsonElement responseObject = bridge.Query("/v1/oilfox/battery/" + oilfoxid);
         logger.info(responseObject.toString());
 
-        /*
-         * if (element.isJsonObject()) {
-         * JsonObject object = responseObject.getAsJsonObject();
-         * String metering = object.get("metering").getAsString();
-         * this.updateProperty(CHANNEL_METERING, metering);
-         * logger.info("Metering " + metering);
-         * }
-         */
+        if (responseObject.isJsonObject()) {
+            JsonObject object = responseObject.getAsJsonObject();
+            BigInteger percentage = object.get("percentage").getAsBigInteger();
+            this.updateState(OilFoxBindingConstants.CHANNEL_BATTERYLEVEL, DecimalType.valueOf(percentage.toString()));
+        }
     }
+
+    public void latestMeter(OilFoxBridgeHandler bridge) throws MalformedURLException, IOException {
+        String oilfoxid = this.getThing().getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
+        if (oilfoxid == null) {
+            logger.error("OilFoxId is not set in {}", this.getThing().getUID());
+            return;
+        }
+
+        JsonElement responseObject = bridge.Query("/v1/tank/" + oilfoxid + "/latestmeter");
+        logger.info(responseObject.toString());
+
+        if (responseObject.isJsonObject()) {
+            JsonObject object = responseObject.getAsJsonObject();
+            JsonObject metering = object.get("metering").getAsJsonObject();
+
+            BigDecimal value = metering.get("value").getAsBigDecimal();
+            this.updateState(OilFoxBindingConstants.CHANNEL_VALUE, DecimalType.valueOf(value.toString()));
+            BigDecimal fillingpercentage = metering.get("fillingpercentage").getAsBigDecimal();
+            this.updateState(OilFoxBindingConstants.CHANNEL_FILLINGPERCENTAGE,
+                    DecimalType.valueOf(fillingpercentage.toString()));
+            BigDecimal liters = metering.get("liters").getAsBigDecimal();
+            this.updateState(OilFoxBindingConstants.CHANNEL_LITERS, DecimalType.valueOf(liters.toString()));
+            BigDecimal currentOilHeight = metering.get("currentOilHeight").getAsBigDecimal();
+            this.updateState(OilFoxBindingConstants.CHANNEL_CURRENTOILHEIGHT,
+                    DecimalType.valueOf(currentOilHeight.toString()));
+        }
+    }
+
+    public void refreshTank(JsonElement tank) {
+        BigInteger height = tank.getAsJsonObject().get("height").getAsBigInteger();
+        this.updateState(OilFoxBindingConstants.CHANNEL_HEIGHT, DecimalType.valueOf(height.toString()));
+        BigInteger volume = tank.getAsJsonObject().get("volume").getAsBigInteger();
+        this.updateState(OilFoxBindingConstants.CHANNEL_VOLUME, DecimalType.valueOf(volume.toString()));
+        BigInteger offset = tank.getAsJsonObject().get("distanceFromTankToOilFox").getAsBigInteger();
+        this.updateState(OilFoxBindingConstants.CHANNEL_OFFSET, DecimalType.valueOf(offset.toString()));
+    }
+
 }

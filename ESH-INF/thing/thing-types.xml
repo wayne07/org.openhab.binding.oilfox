@@ -3,17 +3,23 @@
 	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 
-	<thing-type id="oilfox">
+	<thing-type id="oilfox" listed="false">
 		<label>OilFox</label>
-		<description>OilFox connected through WLAN</description>
+		<description>OilFox connected to OilFoxCloud</description>
 
 		<channels>
             <channel id="volume" typeId="volume" />
             <channel id="height" typeId="height" />
             <channel id="offset" typeId="height" />
-            <channel id="metering" typeId="height" />
             <!-- TBD: how much height inside -->
             <!-- TBD: other properties -->
+            
+            <!-- read only information -->
+            <channel id="battery-level" typeId="system.battery-level"/>
+            <channel id="value" typeId="height" />
+            <channel id="fillingpercentage" typeId="percentage" />
+            <channel id="liters" typeId="volume" />
+            <channel id="currentoilheight" typeId="height" />
 		</channels>
 
         <properties>
@@ -21,36 +27,8 @@
             <property name="modelId">OilFox</property>
             <property name="version"></property>
             <property name="hardwareId"></property>
+            <property name="oilfoxId"></property>
         </properties>
-
-        <config-description>
-            <parameter name="address" type="text">
-                <label>Hostname</label>
-                <description>OilFox Cloud server</description>
-                <required>true</required>
-                <default>api.oilfox.io</default>
-            </parameter>
-
-            <parameter name="email" type="text">
-                <label>Email on OilFox Cloud</label>
-                <description>Provide the Email registerd on the OilFox Cloud</description>
-                <required>true</required>
-            </parameter>
-
-            <parameter name="password" type="text">
-                <context>password</context>
-                <label>Password on OilFox Cloud</label>
-                <description>Provide the password registerd on the OilFox Cloud</description>
-                <required>true</required>
-            </parameter>
-            
-            <parameter name="refresh" type="integer" required="true" min="1" max="65335">
-                <label>Refresh interval</label>
-                <description>Specifies the refresh interval in hours.</description>
-                <required>true</required>
-                <default>6</default>
-            </parameter>
-        </config-description>
 	</thing-type>
 
     <channel-type id="height">
@@ -61,7 +39,14 @@
 
     <channel-type id="volume">
         <item-type>Number</item-type>
-        <label>Height [%d l]</label>
+        <label>Volume [%d l]</label>
         <description>Volume in liters</description>
+    </channel-type>
+
+    <channel-type id="percentage">
+        <item-type>Number</item-type>
+        <label>Percentage</label>
+        <description>Percentage, 0 to 100</description>
+        <state min="0" max="100" pattern="%.2f %%"></state>
     </channel-type>
 </thing:thing-descriptions>
