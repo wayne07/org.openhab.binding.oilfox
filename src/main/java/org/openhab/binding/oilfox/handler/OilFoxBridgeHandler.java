@@ -114,13 +114,13 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
 
             refreshJob = scheduler.scheduleWithFixedDelay(() -> {
                 ReadStatus();
-            }, 0, config.refresh.longValue(), TimeUnit.MINUTES);
+            }, 0, config.refresh.longValue(), TimeUnit.HOURS);
         }
     }
 
     // communication with OilFox Cloud
 
-    // TBD: store token
+    // TODO: store token
     private String token;
 
     protected JsonElement Query(String address) throws MalformedURLException, IOException {
@@ -232,7 +232,7 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
 
     public boolean registerOilFoxStatusListener(@Nullable OilFoxStatusListener oilFoxStatusListener) {
         if (oilFoxStatusListener == null) {
-            throw new IllegalArgumentException("It's not allowed to pass a null LightStatusListener.");
+            throw new IllegalArgumentException("It's not allowed to pass a null OilFoxStatusListener.");
         }
         return oilFoxStatusListeners.add(oilFoxStatusListener);
     }
