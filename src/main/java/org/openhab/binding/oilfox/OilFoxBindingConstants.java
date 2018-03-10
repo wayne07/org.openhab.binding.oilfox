@@ -57,12 +57,5 @@ public class OilFoxBindingConstants {
     public static final String PROPERTY_VERSION = "version";
     public static final String PROPERTY_OILFOXID = "oilfoxId";
     public static final String PROPERTY_OILFOXHWID = "hardwareId";
-
-    // TODO: remove as handled in OilFox*Configuration
-    // List of all Configurations
-    public static final String CONFIGURATION_ADDRESS = "address";
-    public static final String CONFIGURATION_EMAIL = "email";
-    public static final String CONFIGURATION_PASSWORD = "password";
-    public static final String CONFIGURATION_REFRESH = "refresh";
-
 }
+

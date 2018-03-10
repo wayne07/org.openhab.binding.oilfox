@@ -3,7 +3,6 @@
 	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 
-  <!-- TODO: split OilFox into 2 things, OilFox itself and Tank -->
 	<thing-type id="oilfox" listed="false">
 		<label>OilFox</label>
 		<description>OilFox connected to OilFoxCloud</description>
@@ -12,8 +11,6 @@
             <channel id="volume" typeId="volume" />
             <channel id="height" typeId="height" />
             <channel id="offset" typeId="height" />
-            <!-- TODO: how much height inside -->
-            <!-- TODO: other properties -->
             
             <!-- read only information -->
             <channel id="battery-level" typeId="system.battery-level"/>

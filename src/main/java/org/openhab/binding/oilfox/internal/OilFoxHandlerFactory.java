@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
@@ -61,6 +62,21 @@ public class OilFoxHandlerFactory extends BaseThingHandlerFactory {
             return new OilFoxHandler(thing);
         }
         return null;
+    }
+
+    @Override
+    protected synchronized void removeHandler(@NonNull ThingHandler thingHandler) {
+        if (thingHandler instanceof OilFoxBridgeHandler) {
+            ServiceRegistration<?> serviceReg = discoveryServiceRegs.get(thingHandler.getThing().getUID());
+            if (serviceReg != null) {
+                // remove discovery service, if bridge handler is removed
+                OilFoxDiscoveryService discoveryService = (OilFoxDiscoveryService) bundleContext
+                        .getService(serviceReg.getReference());
+                discoveryService.deactivate();
+                serviceReg.unregister();
+                discoveryServiceRegs.remove(thingHandler.getThing().getUID());
+            }
+        }
     }
 
     private synchronized void registerOilFoxDiscoveryService(OilFoxBridgeHandler bridgeHandler) {

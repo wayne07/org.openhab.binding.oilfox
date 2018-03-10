@@ -79,7 +79,7 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
             }
 
             try {
-                summary();
+                summary(true);
 
                 updateStatus(ThingStatus.ONLINE);
 
@@ -87,10 +87,10 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
                     oilFoxStatusListener.onOilFoxRefresh(this);
                 }
             } catch (MalformedURLException e) {
-                logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
+                logger.error("Exception occurred during execution: {}", e.getMessage(), e);
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
             } catch (IOException e) {
-                logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
+                logger.error("Exception occurred during execution: {}", e.getMessage(), e);
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
             }
         }
@@ -98,7 +98,7 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        // TODO: currently not implemented to change any configuration
+        // TODO: Changing of settings not implemented
     }
 
     @Override
@@ -120,7 +120,7 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
 
     // communication with OilFox Cloud
 
-    // TODO: store token
+    // TODO: Cache token locally
     private String token;
 
     protected JsonElement Query(String address) throws MalformedURLException, IOException {
@@ -181,19 +181,19 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
             if (responseObject.isJsonObject()) {
                 JsonObject object = responseObject.getAsJsonObject();
                 token = object.get("token").getAsString();
-                logger.info("Token " + token);
+                logger.debug("Token " + token);
             }
 
             updateStatus(ThingStatus.ONLINE);
         } catch (IOException e) {
-            logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
+            logger.error("Exception occurred during execution: {}", e.getMessage(), e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         }
     }
 
-    public void summary() throws MalformedURLException, IOException {
+    public void summary(boolean update) throws MalformedURLException, IOException {
         JsonElement responseObject = Query("/v1/user/summary");
-        logger.info(responseObject.toString());
+        logger.debug(responseObject.toString());
 
         if (responseObject.isJsonObject()) {
             JsonObject object = responseObject.getAsJsonObject();
@@ -206,24 +206,26 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
                     try {
                         oilFoxStatusListener.onOilFoxAdded(this.getThing().getUID(), name, id, hwid);
                     } catch (Exception e) {
-                        logger.error("An exception occurred while calling the BridgeHeartbeatListener", e);
+                        logger.error("An exception occurred while calling the OilFoxStatusListener", e);
                     }
                 }
             }
 
-            JsonArray tanks = object.get("tanks").getAsJsonArray();
-            for (Thing thing : getThing().getThings()) {
-                String oilfoxid = thing.getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
-                if (oilfoxid == null) {
-                    logger.error("OilFoxId is not set in {}", thing.getUID());
-                    return;
-                }
+            if (update) {
+                JsonArray tanks = object.get("tanks").getAsJsonArray();
+                for (Thing thing : getThing().getThings()) {
+                    String oilfoxid = thing.getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
+                    if (oilfoxid == null) {
+                        logger.error("OilFoxId is not set in {}", thing.getUID());
+                        return;
+                    }
 
-                for (JsonElement tank : tanks) {
-                    String id = tank.getAsJsonObject().get("id").getAsString();
-                    if (oilfoxid.equals(id)) {
-                        ((OilFoxHandler) thing.getHandler()).refreshTank(tank);
-                        break;
+                    for (JsonElement tank : tanks) {
+                        String id = tank.getAsJsonObject().get("id").getAsString();
+                        if (oilfoxid.equals(id)) {
+                            ((OilFoxHandler) thing.getHandler()).refreshTank(tank);
+                            break;
+                        }
                     }
                 }
             }

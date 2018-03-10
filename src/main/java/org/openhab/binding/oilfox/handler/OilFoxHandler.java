@@ -74,10 +74,10 @@ public class OilFoxHandler extends BaseThingHandler implements OilFoxStatusListe
             latestMeter(bridge);
             updateStatus(ThingStatus.ONLINE);
         } catch (MalformedURLException e) {
-            logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
+            logger.error("Exception occurred during execution: {}", e.getMessage(), e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
         } catch (IOException e) {
-            logger.debug("Exception occurred during execution: {}", e.getMessage(), e);
+            logger.error("Exception occurred during execution: {}", e.getMessage(), e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         }
 
@@ -91,7 +91,7 @@ public class OilFoxHandler extends BaseThingHandler implements OilFoxStatusListe
         }
 
         JsonElement responseObject = bridge.Query("/v1/oilfox/battery/" + oilfoxid);
-        logger.info(responseObject.toString());
+        logger.debug(responseObject.toString());
 
         if (responseObject.isJsonObject()) {
             JsonObject object = responseObject.getAsJsonObject();
@@ -108,7 +108,7 @@ public class OilFoxHandler extends BaseThingHandler implements OilFoxStatusListe
         }
 
         JsonElement responseObject = bridge.Query("/v1/tank/" + oilfoxid + "/latestmeter");
-        logger.info(responseObject.toString());
+        logger.debug(responseObject.toString());
 
         if (responseObject.isJsonObject()) {
             JsonObject object = responseObject.getAsJsonObject();
