@@ -110,7 +110,13 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
                 refreshJob.cancel(false);
             }
 
-            login();
+            String token = thing.getProperties().get(OilFoxBindingConstants.PROPERTY_TOKEN);
+            logger.info("Token {}", token);
+            if (token == null || token.equals("")) {
+                login();
+            } else {
+                updateStatus(ThingStatus.ONLINE);
+            }
 
             refreshJob = scheduler.scheduleWithFixedDelay(() -> {
                 ReadStatus();
@@ -119,9 +125,6 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
     }
 
     // communication with OilFox Cloud
-
-    // TODO: Cache token locally
-    private String token;
 
     protected JsonElement Query(String address) throws MalformedURLException, IOException {
         return Query(address, JsonNull.INSTANCE);
@@ -141,6 +144,7 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
                 throw new IOException("Not logged in");
             }
 
+            String token = thing.getProperties().get(OilFoxBindingConstants.PROPERTY_TOKEN);
             request.setRequestProperty("X-Auth-Token", token);
         } else {
             request.setRequestMethod("POST");
@@ -180,8 +184,9 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
 
             if (responseObject.isJsonObject()) {
                 JsonObject object = responseObject.getAsJsonObject();
-                token = object.get("token").getAsString();
+                String token = object.get("token").getAsString();
                 logger.debug("Token " + token);
+                thing.setProperty(OilFoxBindingConstants.PROPERTY_TOKEN, token);
             }
 
             updateStatus(ThingStatus.ONLINE);

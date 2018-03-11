@@ -13,6 +13,7 @@
             <property name="vendor">OilFox</property>
             <property name="modelId">OilFox Cloud</property>
             <property name="version">v1</property>
+            <property name="token"></property>
         </properties>
 
         <config-description>
