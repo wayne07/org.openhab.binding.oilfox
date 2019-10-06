@@ -7,6 +7,8 @@ package org.openhab.binding.oilfox.handler;
 
 import org.eclipse.smarthome.core.thing.ThingUID;
 
+import com.google.gson.JsonArray;
+
 public interface OilFoxStatusListener {
     /**
      * This method is called whenever an OilFox is removed.
@@ -26,5 +28,5 @@ public interface OilFoxStatusListener {
      */
     void onOilFoxAdded(ThingUID bridge, String name, String id, String hwid);
 
-    void onOilFoxRefresh(OilFoxBridgeHandler bridge);
+    void onOilFoxRefresh(JsonArray devices);
 }

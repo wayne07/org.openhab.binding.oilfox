@@ -79,12 +79,16 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
             }
 
             try {
-                summary(true);
+                JsonElement responseObject = summary(true);
+                if (responseObject.isJsonObject()) {
+                    JsonObject object = responseObject.getAsJsonObject();
+                    JsonArray devices = object.get("devices").getAsJsonArray();
 
-                updateStatus(ThingStatus.ONLINE);
+                    updateStatus(ThingStatus.ONLINE);
 
-                for (OilFoxStatusListener oilFoxStatusListener : oilFoxStatusListeners) {
-                    oilFoxStatusListener.onOilFoxRefresh(this);
+                    for (OilFoxStatusListener oilFoxStatusListener : oilFoxStatusListeners) {
+                        oilFoxStatusListener.onOilFoxRefresh(devices);
+                    }
                 }
             } catch (MalformedURLException e) {
                 logger.error("Exception occurred during execution: {}", e.getMessage(), e);
@@ -180,7 +184,7 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
             requestObject.addProperty("email", config.email);
             requestObject.addProperty("password", config.password);
 
-            JsonElement responseObject = Query("/v1/user/login", requestObject);
+            JsonElement responseObject = Query("/v2/backoffice/session", requestObject);
 
             if (responseObject.isJsonObject()) {
                 JsonObject object = responseObject.getAsJsonObject();
@@ -196,17 +200,26 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
         }
     }
 
-    public void summary(boolean update) throws MalformedURLException, IOException {
-        JsonElement responseObject = Query("/v1/user/summary");
+    public JsonElement summary(boolean update) throws MalformedURLException, IOException {
+        JsonElement responseObject = Query("/v2/user/summary");
         logger.debug(responseObject.toString());
+
+        //TODO: "id": "UUID",
+        //TODO: "firstName": "xxx",
+        //TODO: "lastName": "xxx",
+        //TODO: "email": "e@mail.com",
+        //TODO: "country": "DE",
+        //TODO: "zipCode": "99999",
+        //TODO: "locale": "de",
+        //TODO: "passwordSet": true,
 
         if (responseObject.isJsonObject()) {
             JsonObject object = responseObject.getAsJsonObject();
-            JsonArray oilfoxes = object.get("oilfoxes").getAsJsonArray();
-            for (JsonElement oilfox : oilfoxes) {
-                String id = oilfox.getAsJsonObject().get("id").getAsString();
-                String name = oilfox.getAsJsonObject().get("name").getAsString();
-                String hwid = oilfox.getAsJsonObject().get("hwid").getAsString();
+            JsonArray devices = object.get("devices").getAsJsonArray();
+            for (JsonElement device : devices) {
+                String id = device.getAsJsonObject().get("id").getAsString();
+                String name = device.getAsJsonObject().get("name").getAsString();
+                String hwid = device.getAsJsonObject().get("hwid").getAsString();
                 for (OilFoxStatusListener oilFoxStatusListener : oilFoxStatusListeners) {
                     try {
                         oilFoxStatusListener.onOilFoxAdded(this.getThing().getUID(), name, id, hwid);
@@ -215,26 +228,8 @@ public class OilFoxBridgeHandler extends BaseBridgeHandler {
                     }
                 }
             }
-
-            if (update) {
-                JsonArray tanks = object.get("tanks").getAsJsonArray();
-                for (Thing thing : getThing().getThings()) {
-                    String oilfoxid = thing.getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
-                    if (oilfoxid == null) {
-                        logger.error("OilFoxId is not set in {}", thing.getUID());
-                        return;
-                    }
-
-                    for (JsonElement tank : tanks) {
-                        String id = tank.getAsJsonObject().get("id").getAsString();
-                        if (oilfoxid.equals(id)) {
-                            ((OilFoxHandler) thing.getHandler()).refreshTank(tank);
-                            break;
-                        }
-                    }
-                }
-            }
         }
+        return responseObject;
     }
 
     public boolean registerOilFoxStatusListener(@Nullable OilFoxStatusListener oilFoxStatusListener) {

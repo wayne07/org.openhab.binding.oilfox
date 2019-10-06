@@ -18,6 +18,7 @@ import org.openhab.binding.oilfox.OilFoxBindingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -68,72 +69,57 @@ public class OilFoxHandler extends BaseThingHandler implements OilFoxStatusListe
     }
 
     @Override
-    public void onOilFoxRefresh(OilFoxBridgeHandler bridge) {
-        try {
-            battery(bridge);
-            latestMeter(bridge);
-            updateStatus(ThingStatus.ONLINE);
-        } catch (MalformedURLException e) {
-            logger.error("Exception occurred during execution: {}", e.getMessage(), e);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
-        } catch (IOException e) {
-            logger.error("Exception occurred during execution: {}", e.getMessage(), e);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
-        }
-
-    }
-
-    public void battery(OilFoxBridgeHandler bridge) throws MalformedURLException, IOException {
+    public void onOilFoxRefresh(JsonArray devices) {
         String oilfoxid = this.getThing().getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
-        if (oilfoxid == null) {
-            logger.error("OilFoxId is not set in {}", this.getThing().getUID());
-            return;
-        }
+        for (JsonElement device : devices) {
+            if (!device.isJsonObject())
+                continue;
 
-        JsonElement responseObject = bridge.Query("/v1/oilfox/battery/" + oilfoxid);
-        logger.debug(responseObject.toString());
+            JsonObject object = device.getAsJsonObject();
 
-        if (responseObject.isJsonObject()) {
-            JsonObject object = responseObject.getAsJsonObject();
-            BigInteger percentage = object.get("percentage").getAsBigInteger();
-            this.updateState(OilFoxBindingConstants.CHANNEL_BATTERYLEVEL, DecimalType.valueOf(percentage.toString()));
-        }
-    }
+            String deviceid = object.get("id").getAsString();
+            if (!oilfoxid.equals(deviceid) )
+                continue;
 
-    public void latestMeter(OilFoxBridgeHandler bridge) throws MalformedURLException, IOException {
-        String oilfoxid = this.getThing().getProperties().get(OilFoxBindingConstants.PROPERTY_OILFOXID);
-        if (oilfoxid == null) {
-            logger.error("OilFoxId is not set in {}", this.getThing().getUID());
-            return;
-        }
+            BigInteger tankHeight = object.get("tankHeight").getAsBigInteger();
+            this.updateState(OilFoxBindingConstants.CHANNEL_HEIGHT, DecimalType.valueOf(tankHeight.toString()));
+            BigInteger tankVolume = object.get("tankVolume").getAsBigInteger();
+            this.updateState(OilFoxBindingConstants.CHANNEL_VOLUME, DecimalType.valueOf(tankVolume.toString()));
+            BigInteger tankOffset = object.get("tankOffset").getAsBigInteger();
+            this.updateState(OilFoxBindingConstants.CHANNEL_OFFSET, DecimalType.valueOf(tankOffset.toString()));
+            //TODO: "tankShape" : "SQUARED"
+            //TODO: "tankIsUsableVolume": false
+            //TODO: "tankUsableVolume": 1000
+            //TODO: "productId": "UUID"
+            //TODO: "notificationInfoEnabled": true,
+            //TODO: "notificationInfoPercentage": 25,
+            //TODO: "notificationAlertEnabled": true,
+            //TODO: "notificationAlertPercentage": 15,
+            //TODO: "measurementIntervalInSeconds": 86400
 
-        JsonElement responseObject = bridge.Query("/v1/tank/" + oilfoxid + "/latestmeter");
-        logger.debug(responseObject.toString());
-
-        if (responseObject.isJsonObject()) {
-            JsonObject object = responseObject.getAsJsonObject();
             JsonObject metering = object.get("metering").getAsJsonObject();
-
             BigDecimal value = metering.get("value").getAsBigDecimal();
             this.updateState(OilFoxBindingConstants.CHANNEL_VALUE, DecimalType.valueOf(value.toString()));
-            BigDecimal fillingpercentage = metering.get("fillingpercentage").getAsBigDecimal();
+            BigDecimal fillingpercentage = metering.get("fillingPercentage").getAsBigDecimal();
             this.updateState(OilFoxBindingConstants.CHANNEL_FILLINGPERCENTAGE,
-                    DecimalType.valueOf(fillingpercentage.toString()));
+                DecimalType.valueOf(fillingpercentage.toString()));
             BigDecimal liters = metering.get("liters").getAsBigDecimal();
             this.updateState(OilFoxBindingConstants.CHANNEL_LITERS, DecimalType.valueOf(liters.toString()));
             BigDecimal currentOilHeight = metering.get("currentOilHeight").getAsBigDecimal();
             this.updateState(OilFoxBindingConstants.CHANNEL_CURRENTOILHEIGHT,
-                    DecimalType.valueOf(currentOilHeight.toString()));
+                DecimalType.valueOf(currentOilHeight.toString()));
+            //TODO: "serverDate": 1568035451021
+            BigInteger battery = metering.get("battery").getAsBigInteger();
+            this.updateState(OilFoxBindingConstants.CHANNEL_BATTERYLEVEL, DecimalType.valueOf(battery.toString()));
+
+            //TODO: "address"
+            //TODO: "partner"
+            //TODO: "chartData"
+            updateStatus(ThingStatus.ONLINE);
+            return;
         }
-    }
 
-    public void refreshTank(JsonElement tank) {
-        BigInteger height = tank.getAsJsonObject().get("height").getAsBigInteger();
-        this.updateState(OilFoxBindingConstants.CHANNEL_HEIGHT, DecimalType.valueOf(height.toString()));
-        BigInteger volume = tank.getAsJsonObject().get("volume").getAsBigInteger();
-        this.updateState(OilFoxBindingConstants.CHANNEL_VOLUME, DecimalType.valueOf(volume.toString()));
-        BigInteger offset = tank.getAsJsonObject().get("distanceFromTankToOilFox").getAsBigInteger();
-        this.updateState(OilFoxBindingConstants.CHANNEL_OFFSET, DecimalType.valueOf(offset.toString()));
+        // Oilfox not found
+        updateStatus(ThingStatus.OFFLINE);
     }
-
 }

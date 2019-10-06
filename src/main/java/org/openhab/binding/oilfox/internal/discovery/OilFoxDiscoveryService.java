@@ -20,6 +20,8 @@ import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonArray;
+
 public class OilFoxDiscoveryService extends AbstractDiscoveryService implements OilFoxStatusListener {
     private final Logger logger = LoggerFactory.getLogger(OilFoxDiscoveryService.class);
 
@@ -74,6 +76,11 @@ public class OilFoxDiscoveryService extends AbstractDiscoveryService implements 
 
     @Override
     public void onOilFoxAdded(ThingUID bridge, String name, String id, String hwid) {
+	String n = name;
+	if (n == null) {
+	    n = "Oilfox " + id;
+	}
+
         ThingTypeUID uid = OilFoxBindingConstants.THING_TYPE_OILFOX;
         ThingUID thingUID = new ThingUID(uid, bridge, id);
         if (thingUID != null) {
@@ -84,13 +91,13 @@ public class OilFoxDiscoveryService extends AbstractDiscoveryService implements 
             properties.put(OilFoxBindingConstants.PROPERTY_OILFOXID, id);
             properties.put(OilFoxBindingConstants.PROPERTY_OILFOXHWID, hwid);
 
-            DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withLabel(name).withBridge(bridge)
+            DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withLabel(n).withBridge(bridge)
                     .withProperties(properties).build();
             thingDiscovered(discoveryResult);
         }
     }
 
     @Override
-    public void onOilFoxRefresh(OilFoxBridgeHandler bridge) {
+    public void onOilFoxRefresh(JsonArray devices) {
     }
 }
