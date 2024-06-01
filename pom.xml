@@ -18,7 +18,7 @@
 
     <groupId>org.openhab.binding</groupId>
 	<artifactId>org.openhab.binding.oilfox</artifactId>
-	<version>2.4.1-SNAPSHOT</version>
+	<version>2.4.0-SNAPSHOT</version>
 
 	<name>OilFox Binding</name>
 
@@ -87,6 +87,14 @@
             <version>1.7.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.openhab.addons.bundles/org.openhab.automation.groovyscripting -->
+        <dependency>
+            <groupId>org.openhab.addons.bundles</groupId>
+            <artifactId>org.openhab.automation.groovyscripting</artifactId>
+            <version>3.4.4</version>
+        </dependency>
+
     </dependencies>
 
     <pluginRepositories>

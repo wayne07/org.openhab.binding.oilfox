@@ -4,6 +4,11 @@ _Give some details about what this binding is meant for - a protocol, system, sp
 
 _If possible, provide some resources like pictures, a YouTube video, etc. to give an impression of what can be done with this binding. You can place such resources into a `doc` folder next to this README.md._
 
+
+How to set up IntelliJ
+https://www.openhab.org/docs/developer/ide/intellij.html
+
+
 ## Supported Things
 
 _Please describe the different supported things / devices within this section._
